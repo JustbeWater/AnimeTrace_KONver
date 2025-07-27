@@ -6,6 +6,12 @@ AnimeTrace的轻音少女版本
 ![界面图片1](./test/show_1.png "介绍图片1")  
   
 ![界面图片2](./test/show_2.png "介绍图片2")
+## 环境
++ 现代浏览器（firefox，chrome，edge等）（必需）
++ python环境，并安装 PIL 库（方括号为可选，如果国内速度慢的话）（非必需）
+```
+pip install [-i https://pypi.tuna.tsinghua.edu.cn/simple] pillow
+```
 ## 使用方法
 + 方法一 打包整个文件下载后，运行 animetrace.html
 ```

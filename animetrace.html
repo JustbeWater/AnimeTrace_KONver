@@ -86,7 +86,7 @@
         </ul>
       </div>
     </div><br>
-    <audio id="bgMusic" loop style="display:none"></audio>
+    <audio id="bgMusic" style="display:none"></audio>
     <button id="musicToggle">背景音乐: 开/关</button>
     <button id="toggleBtn">切换背景方案【本地K-ON方案或官方API方案】</button><br><br>
 
@@ -298,7 +298,7 @@
     const bgMusic = document.getElementById('bgMusic');
 
     // 配置参数
-    const totalSongs = 20; // 设置最大歌曲数量(01.mp3到10.mp3)
+    const totalSongs = 20; // 设置最大歌曲数量
     let currentSong = 1;
 
     // 播放指定编号的歌曲
@@ -306,7 +306,12 @@
       currentSong = songNum;
       const songName = `music/${String(songNum).padStart(2, '0')}.mp3`;
       bgMusic.src = songName;
-      bgMusic.play().catch(e => console.log('播放失败:', e));
+      bgMusic.play().catch(e => {
+        console.error('播放失败:', e);
+        // 失败时自动尝试下一首
+        const next = (currentSong % totalSongs) + 1;
+        playSong(next);
+      });
     }
 
     // 初始化随机播放
@@ -324,9 +329,9 @@
     // 音乐切换按钮事件
     musicToggle.onclick = () => {
       if(isMusicPlaying) {
-          bgMusic.pause();
+        bgMusic.pause();
       } else {
-          bgMusic.play();
+        bgMusic.play();
       }
       isMusicPlaying = !isMusicPlaying;
     };
