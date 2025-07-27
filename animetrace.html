@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="./test/Houkago_Tea_Time.png">
 <title>AnimeTrace 特别版</title>
 <style>
   body{
@@ -171,17 +172,26 @@
         preview.innerHTML = `<p>网络或服务器错误：${e.message}</p>`;
       }
     };
-
-
-    /* 逐行输出识别结果 */
+    
+    /* 修改后的render函数 - 添加超链接跳转功能 */
     function render(dataArr) {
       const results = dataArr.map(b => {
-        const characters = b.character.map(c => `角色匹配：${c.work} - ${c.character}`).join('<br>');
+        const characters = b.character.map(c => {
+          // 生成搜索链接 - 使用百度搜索角色名+作品名
+          const searchQuery = encodeURIComponent(`${c.character} ${c.work}`);
+          const searchUrl = `https://www.baidu.com/s?wd=${searchQuery}`;
+          
+          // 返回带链接的角色信息
+          return `角色匹配：<a href="${searchUrl}" target="_blank" style="color:#4CAF50;text-decoration:underline">${c.work} - ${c.character}</a>`;
+        }).join('<br>');
+        
         const boxInfo = `检测区域: ID=${b.box_id}<br> (x1=${b.box[0].toFixed(4)}, y1=${b.box[1].toFixed(4)}, x2=${b.box[2].toFixed(4)}, y2=${b.box[3].toFixed(4)})`;
         return `${boxInfo}<br>${characters}`;
       });
+      
       preview.innerHTML = `<div class="result-item">${results.join('<br><br>')}</div>`;
     }
+
 
     //========== 背景模块 ==========
 
