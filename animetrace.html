@@ -3,11 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>AnimeTrace 特别版</title>
-<!--
- 我的火狐浏览器加载官网(www.animetrace.com 或 ai.animedb.cn)时
- 格式会错乱，并且无法正常选择图片，除了开发文档什么都看不了
- 故开发此项目，顺便添加一些官网没有的功能，作为特别版存在
- -->
 <style>
   body{
     background:transparent;
@@ -85,14 +80,13 @@
       <div id="textContent">
         <ul>
           <li>图片最大 10 MB</li>
-          <li>可以使用官方图源作背景, 注意使用官方图源时需要关闭暗黑风格插件</li>
           <li>当前默认返回多结果, 且无法使用 ai 检测, api也不支持 url 图片识别</li>
-          <li>音频自动播放默认关闭, 需要在网址栏或设置中允许, 后续进入网页才会自动播放</li>
+          <li>音频自动播放某些情况下默认关闭, 需要在网址栏或设置中允许, 后续进入网页才会自动播放</li>
         </ul>
       </div>
     </div><br>
     <audio id="bgMusic" loop style="display:none"></audio>
-    <button id="musicToggle">背景音乐: 关闭</button>
+    <button id="musicToggle">背景音乐: 开/关</button>
     <button id="toggleBtn">切换背景方案【本地K-ON方案或官方API方案】</button><br><br>
 
     <!-- 控制区 -->
@@ -139,29 +133,45 @@
     });
 
     /* 识别逻辑 */
-    uploadBtn.onclick = async ()=>{
-      if(!currentFile){ alert('请先选择图片'); return; }
+    
+    uploadBtn.onclick = async () => {
+      if(!currentFile){ 
+        alert('请先选择图片'); 
+        return; 
+      }
       const form = new FormData();
       form.append('file', currentFile);
       form.append('model', modelSel.value);
       form.append('is_multi', multiChk.checked ? '1' : '0');
       form.append('ai_detect', aiChk.checked ? 'true' : 'false');
-
       preview.innerHTML = '<p>识别中，请稍候...</p>';
-      try{
-        const res = await fetch('https://api.animetrace.com/v1/search', {method:'POST', body:form});
+      try {
+        const res = await fetch('https://api.animetrace.com/v1/search', {
+          method: 'POST', 
+          body: form
+        });
+        // 处理无响应内容的情况(纯风景图片)
+        if(res.status === 204) {
+          preview.innerHTML = '<p>无结果 - 图片中未检测到人物</p>';
+          return;
+        }
         const json = await res.json();
-
-        //事实上可以细分很多类型的异常，如图片人数超出限制，api维护中等，但总之就是无法识别
-        if(json.code !== 0 && json.code !== 17720){   
-          preview.innerHTML = '<p>识别失败：'+ JSON.stringify(json) +'</p>';
+        // 处理返回空数据的情况
+        if(!json || !json.data || json.data.length === 0) {
+          preview.innerHTML = '<p>无结果 - 图片中未检测到人物</p>';
+          return;
+        }
+        // 处理API返回的错误码
+        if(json.code !== 0) {
+          preview.innerHTML = `<p>识别失败：${json.message || '未知错误'}</p>`;
           return;
         }
         render(json.data);
-      }catch(e){
-        preview.innerHTML = '<p>网络或服务器错误：'+ e.message +'</p>';
+      } catch(e) {
+        preview.innerHTML = `<p>网络或服务器错误：${e.message}</p>`;
       }
     };
+
 
     /* 逐行输出识别结果 */
     function render(dataArr) {
@@ -271,56 +281,86 @@
     startTimer();
 
     //========== 音乐模块 ==========
-
+            
     // 音乐播放控制变量
     let isMusicPlaying = false;
     const musicToggle = document.getElementById('musicToggle');
     const bgMusic = document.getElementById('bgMusic');
 
-    // 本地音乐文件列表
-    const musicList = [
-      'music/test.mp3',
-      // 可继续添加更多曲目
-    ];
+    // 配置参数
+    const totalSongs = 20; // 设置最大歌曲数量(01.mp3到10.mp3)
+    let currentSong = 1;
+
+    // 播放指定编号的歌曲
+    function playSong(songNum) {
+      currentSong = songNum;
+      const songName = `music/${String(songNum).padStart(2, '0')}.mp3`;
+      bgMusic.src = songName;
+      bgMusic.play().catch(e => console.log('播放失败:', e));
+    }
 
     // 初始化随机播放
     function initMusicPlayer() {
-      const randomTrack = musicList[Math.floor(Math.random() * musicList.length)];
-      bgMusic.src = randomTrack;
+      const randomSong = Math.floor(Math.random() * totalSongs) + 1;
+      playSong(randomSong);
       
-      // 自动播放处理（需用户交互后）
-      document.body.addEventListener('click', () => {
-        if(!isMusicPlaying) {
-          bgMusic.play().then(() => {
-            isMusicPlaying = true;
-            musicToggle.textContent = '背景音乐: 开启';
-          }).catch(e => console.log('自动播放被阻止:', e));
-        }
-      }, { once: true });
+      if(!isMusicPlaying) {
+        bgMusic.play().then(() => {
+          isMusicPlaying = true;
+        }).catch(e => console.log('自动播放被阻止:', e));
+      }
     }
 
     // 音乐切换按钮事件
     musicToggle.onclick = () => {
       if(isMusicPlaying) {
-        bgMusic.pause();
-        musicToggle.textContent = '背景音乐: 关闭';
+          bgMusic.pause();
       } else {
-        bgMusic.play();
-        musicToggle.textContent = '背景音乐: 开启';
+          bgMusic.play();
       }
       isMusicPlaying = !isMusicPlaying;
     };
 
-    // 曲目结束时自动切换
+    // 曲目结束时自动切换下一首
     bgMusic.addEventListener('ended', () => {
-      const currentIndex = musicList.indexOf(bgMusic.src);
-      const nextIndex = (currentIndex + 1) % musicList.length;
-      bgMusic.src = musicList[nextIndex];
-      bgMusic.play();
+      const nextSong = (currentSong % totalSongs) + 1;
+      playSong(nextSong);
     });
 
     // 初始化音乐播放器
     initMusicPlayer();
+
+    // ========== 拖拽选图功能 ==========
+
+    document.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      // 为整个页面添加拖拽进入的视觉反馈
+      document.body.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+      fileBox.style.borderColor = '#4CAF50';
+    });
+
+    document.addEventListener('dragleave', (e) => {
+      // 只有当鼠标离开文档时才恢复样式
+      if (!e.relatedTarget || e.relatedTarget === document.documentElement) {
+        document.body.style.backgroundColor = '';
+        fileBox.style.borderColor = '#ccc';
+      }
+    });
+
+    document.addEventListener('drop', (e) => {
+      e.preventDefault();
+      // 恢复页面样式
+      document.body.style.backgroundColor = '';
+      fileBox.style.borderColor = '#ccc';
+      
+      // 处理拖放的文件
+      if(e.dataTransfer.files.length) {
+        currentFile = e.dataTransfer.files[0];
+        coverImg.src = URL.createObjectURL(currentFile);
+        plus.style.display = 'none';
+        coverImg.style.display = 'block';
+      }
+    });
 
   </script>
 </body>
