@@ -7,11 +7,11 @@ AnimeTrace的轻音少女版本
   
 ![界面图片2](./test/show_2.png "介绍图片2")
 ## 使用方法
-1. 打包整个文件下载后，运行 animetrace.html
++ 方法一 打包整个文件下载后，运行 animetrace.html
 ```
 https://github.com/JustbeWater/AnimeTrace_KONver/archive/refs/heads/main.zip
 ```
-2. 克隆仓库后运行animetrace.html
++ 方法二 克隆仓库后运行animetrace.html
 ```
 git clone https://github.com/JustbeWater/AnimeTrace_KONver.git
 ```
