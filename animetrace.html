@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>AnimeTrace 火狐版</title>
+<!--
+ 好像火狐浏览器加载官网 www.animetrace.com 或 ai.animedb.cn 时
+ 格式会错乱，并且无法正常选择图片
+ 故开发此项目
+ -->
+<style>
+  body{
+    background:transparent;
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  }
+  h2{
+    position:relative;
+    padding:6px 0;
+    margin:0 0 20px;
+    color:palevioletred;
+    background:rgba(0,0,0,.55);
+    text-align:center;
+    border-radius:6px;
+  }
+  #fileBoxContainer {  /* 用于在添加文件旁边添加几条提示 */
+    display: flex;
+    align-items: center;
+    gap: 20px; /* 设置间距 */
+  }
+  #fileBox{
+    width:300px;
+    height:225px;
+    border:2px dashed #ccc;
+    border-radius:8px;
+    overflow:hidden;
+    cursor:pointer;
+    transition:.2s;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #fileBox img{
+    width:100%;
+    height:100%;
+    object-fit:cover
+  }
+  #plus{
+    font-size:50px;
+    color:#aaa;
+    user-select:none}
+  .result-item{
+    width:666px;
+    max-width:100%;
+    margin:6px 0;
+    padding:6px;background:#fff;
+    border-radius:4px;
+    background:rgba(0,0,0,.5);  /* 返回结果使用黑色半透明背景 */
+    box-shadow:0 1px 2px rgba(0,0,0,.1)
+  }
+  .container{
+    width:666px;
+    margin:40px auto;
+    padding:20px;
+    background:rgba(0,0,0,.55);
+    border-radius:8px;
+    color:#fff;
+  }
+</style>
+</head>
+<body>
+  <!-- 包含所有控件的盒子，用于透明化 -->
+  <div class="container">
+    <h2>AnimeTrace 火狐版</h2>
+
+    <!-- url搜索栏。由于官方文档说明了当前api不支持url识别, 所以计划搁置 -->
+
+    <!-- 方形按钮：初始显示加号，选图后显示图片 -->
+    <div id="fileBoxContainer">
+      <div id="fileBox">
+        <span id="plus">+</span>
+        <img id="coverImg" style="display:none">
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+      <div id="textContent">
+        <ul>
+          <li>图片最大 10 MB</li>
+          <li>可以使用官方图源作背景, 注意使用官方图源时需要关闭暗黑风格插件</li>
+          <li>当前默认返回多结果, 且无法使用 ai 检测, api也不支持 url 图片识别</li>
+          <li>音频自动播放默认关闭, 需要在网址栏或设置中允许, 后续进入网页才会自动播放</li>
+        </ul>
+      </div>
+    </div><br>
+    <audio id="bgMusic" loop style="display:none"></audio>
+    <button id="musicToggle">背景音乐: 关闭</button>
+    <button id="toggleBtn">切换背景方案【本地K-ON方案或官方API方案】</button><br><br>
+
+    <!-- 控制区 -->
+    <!-- 当前不知道为什么, 无论是否勾选返回多结果, 都是返回多结果, 无论是否勾选AI检测, 都返回AI检测为否, 即使发送了AI图 -->
+    <label><input type="checkbox" id="multiChk"> 返回多个结果</label>
+    <label><input type="checkbox" id="aiChk"> 开启 AI 检测</label>
+    <select id="modelSel">
+      <option value="anime_model_lovelive">高级动画识别①</option>
+      <option value="pre_stable">高级动画识别②</option>
+      <option value="anime">普通动画识别</option>
+      <option value="full_game_model_kira">高级 Gal 识别</option>
+    </select>
+    <button id="uploadBtn">开始识别</button>
+
+    <!-- 结果区 -->
+    <div id="preview"></div>
+  </div>
+
+  <script>
+    //========== 功能模块 ==========
+
+    const fileBox   = document.getElementById('fileBox');
+    const fileInput = document.getElementById('fileInput');
+    const plus      = document.getElementById('plus');
+    const coverImg  = document.getElementById('coverImg');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const multiChk  = document.getElementById('multiChk');
+    const aiChk     = document.getElementById('aiChk');
+    const modelSel  = document.getElementById('modelSel');
+    const preview   = document.getElementById('preview');
+
+    let currentFile = null;
+
+    /* 点击方框打开文件选择器 */
+    fileBox.addEventListener('click', () => fileInput.click());
+
+    /* 选文件后立即把图片盖在方框上 */
+    fileInput.addEventListener('change', (e)=>{
+      currentFile = e.target.files[0];
+      if(!currentFile) return;
+      coverImg.src = URL.createObjectURL(currentFile);
+      plus.style.display   = 'none';
+      coverImg.style.display = 'block';
+    });
+
+    /* 识别逻辑 */
+    uploadBtn.onclick = async ()=>{
+      if(!currentFile){ alert('请先选择图片'); return; }
+      const form = new FormData();
+      form.append('file', currentFile);
+      form.append('model', modelSel.value);
+      form.append('is_multi', multiChk.checked ? '1' : '0');
+      form.append('ai_detect', aiChk.checked ? 'true' : 'false');
+
+      preview.innerHTML = '<p>识别中，请稍候...</p>';
+      try{
+        const res = await fetch('https://api.animetrace.com/v1/search', {method:'POST', body:form});
+        const json = await res.json();
+
+        //事实上可以细分很多类型的异常，如图片人数超出限制，api维护中等，但总之就是无法识别
+        if(json.code !== 0 && json.code !== 17720){   
+          preview.innerHTML = '<p>识别失败：'+ JSON.stringify(json) +'</p>';
+          return;
+        }
+        render(json.data);
+      }catch(e){
+        preview.innerHTML = '<p>网络或服务器错误：'+ e.message +'</p>';
+      }
+    };
+
+    /* 逐行输出识别结果 */
+    function render(dataArr) {
+      const results = dataArr.map(b => {
+        const characters = b.character.map(c => `角色匹配：${c.work} - ${c.character}`).join('<br>');
+        const boxInfo = `检测区域: ID=${b.box_id}<br> (x1=${b.box[0].toFixed(4)}, y1=${b.box[1].toFixed(4)}, x2=${b.box[2].toFixed(4)}, y2=${b.box[3].toFixed(4)})`;
+        return `${boxInfo}<br>${characters}`;
+      });
+      preview.innerHTML = `<div class="result-item">${results.join('<br><br>')}</div>`;
+    }
+
+    //========== 背景模块 ==========
+
+    let useApi = false;   // 默认不使用官方api获取图片
+    let timer = null;     // 定时器
+    let currentBg = null; // 当前背景
+    let nextBg = null;    // 下一张背景
+
+    // 添加全局过渡样式
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .bg-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+      }
+      .bg-image {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0;
+        transition: opacity 1.5s ease-in-out;
+      }
+      .bg-image.active {
+        opacity: 1;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // 创建背景容器
+    const bgContainer = document.createElement('div');
+    bgContainer.className = 'bg-container';
+    document.body.appendChild(bgContainer);
+
+    /* 使用官方api获取随机图片 */
+    function setBackgroundImageApi() {
+      const imageUrl = 'https://support.animetrace.com/random/image?' + Date.now();  // 增加时间戳，防止缓存数据或相同url导致背景不更改
+      const img = new Image();
+      img.onload = function() {
+        swapBackground(`url(${img.src})`);
+      };
+      img.src = imageUrl;
+    }
+
+    function setBackgroundImageLocal() {
+      const max = 40;
+      let current = Math.floor(Math.random() * max) + 1;
+      const bgUrl = `bg/${String(current).padStart(2, '0')}.jpg`;
+      
+      const img = new Image();
+      img.onload = function() {
+        swapBackground(`url(${bgUrl})`);
+      };
+      img.src = bgUrl;
+    }
+    /* 淡入淡出切换背景 */
+    function swapBackground(imageUrl) {
+      nextBg = document.createElement('div');
+      nextBg.className = 'bg-image';
+      nextBg.style.backgroundImage = imageUrl;
+      bgContainer.appendChild(nextBg);
+
+      setTimeout(() => {
+        nextBg.classList.add('active');
+        setTimeout(() => {
+          if(currentBg) bgContainer.removeChild(currentBg);
+          currentBg = nextBg;
+        }, 1500);
+      }, 50);
+    }
+
+    /* 定时器 */
+    function startTimer() {
+      clearInterval(timer);
+      timer = setInterval(() => {
+        if(useApi) setBackgroundImageApi();
+        else setBackgroundImageLocal();
+      }, 60000);        // 每分钟切换
+    }
+
+    /* 监听切换背景方案按钮 */
+    document.getElementById('toggleBtn').onclick = function() {
+      useApi = !useApi;
+      if(useApi) setBackgroundImageApi();
+      else setBackgroundImageLocal();
+      startTimer();
+    };
+
+    // 初始化
+    setBackgroundImageLocal();
+    startTimer();
+
+    //========== 音乐模块 ==========
+
+    // 音乐播放控制变量
+    let isMusicPlaying = false;
+    const musicToggle = document.getElementById('musicToggle');
+    const bgMusic = document.getElementById('bgMusic');
+
+    // 本地音乐文件列表
+    const musicList = [
+      'music/test.mp3',
+      // 可继续添加更多曲目
+    ];
+
+    // 初始化随机播放
+    function initMusicPlayer() {
+      const randomTrack = musicList[Math.floor(Math.random() * musicList.length)];
+      bgMusic.src = randomTrack;
+      
+      // 自动播放处理（需用户交互后）
+      document.body.addEventListener('click', () => {
+        if(!isMusicPlaying) {
+          bgMusic.play().then(() => {
+            isMusicPlaying = true;
+            musicToggle.textContent = '背景音乐: 开启';
+          }).catch(e => console.log('自动播放被阻止:', e));
+        }
+      }, { once: true });
+    }
+
+    // 音乐切换按钮事件
+    musicToggle.onclick = () => {
+      if(isMusicPlaying) {
+        bgMusic.pause();
+        musicToggle.textContent = '背景音乐: 关闭';
+      } else {
+        bgMusic.play();
+        musicToggle.textContent = '背景音乐: 开启';
+      }
+      isMusicPlaying = !isMusicPlaying;
+    };
+
+    // 曲目结束时自动切换
+    bgMusic.addEventListener('ended', () => {
+      const currentIndex = musicList.indexOf(bgMusic.src);
+      const nextIndex = (currentIndex + 1) % musicList.length;
+      bgMusic.src = musicList[nextIndex];
+      bgMusic.play();
+    });
+
+    // 初始化音乐播放器
+    initMusicPlayer();
+
+  </script>
+</body>
+</html>
