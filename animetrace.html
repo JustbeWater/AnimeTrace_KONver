@@ -2,22 +2,13 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" href="./test/Houkago_Tea_Time.png">
+<link rel="icon" href="test/Houkago_Tea_Time.png">
 <title>AnimeTrace 特别版</title>
 <style>
   body{
     background:transparent;
     margin:0;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-  }
-  h2{
-    position:relative;
-    padding:6px 0;
-    margin:0 0 20px;
-    color:palevioletred;
-    background:rgba(0,0,0,.55);
-    text-align:center;
-    border-radius:6px;
   }
   #fileBoxContainer {  /* 用于在添加文件旁边添加几条提示 */
     display: flex;
@@ -45,29 +36,63 @@
     font-size:50px;
     color:#aaa;
     user-select:none}
-  .result-item{
-    width:666px;
-    max-width:100%;
-    margin:6px 0;
-    padding:6px;background:#fff;
-    border-radius:4px;
-    background:rgba(0,0,0,.5);  /* 返回结果使用黑色半透明背景 */
-    box-shadow:0 1px 2px rgba(0,0,0,.1)
-  }
-  .container{
-    width:666px;
-    margin:40px auto;
-    padding:20px;
-    background:rgba(0,0,0,.55);
-    border-radius:8px;
-    color:#fff;
-  }
+    .result-item{
+      width:666px;
+      max-width:100%;
+      margin:6px 0;
+      padding:6px;background:#fff;
+      border-radius:4px;
+      background:rgba(0,0,0,.5);  /* 返回结果使用黑色半透明背景 */
+      box-shadow:0 1px 2px rgba(0,0,0,.1)
+    }
+    .container{
+      width:666px;
+      margin:40px auto;
+      padding:20px;
+      background:rgba(0,0,0,.55);
+      border-radius:8px;
+      color:#fff;
+    }
+    h2{
+      white-space: pre-wrap; /* 保留所有空格 */
+      position:relative;
+      padding:6px 0;
+      margin:0 0 20px;
+      color:palevioletred;
+      background:rgba(0,0,0,.55);
+      text-align:center;
+      border-radius:6px;
+    }
+    .char {
+      display: inline-block;
+      will-change: transform;
+      transform-style: preserve-3d;
+    }
+    @keyframes spin-jump {
+      0% { 
+          transform: translateY(0) rotateY(0) scale(1);
+          opacity: 0.8;
+      }
+      30% { 
+          transform: translateY(-30px) rotateY(720deg) scale(1.3); /* 起跳高度 30px */
+          opacity: 1;
+      }
+      70% { 
+          transform: translateY(0) rotateY(720deg) scale(1);
+      }
+      85% { 
+          transform: translateY(-10px) rotateY(720deg) scale(1.1); /* 弹跳高度 10px */
+      }
+      100% { 
+          transform: translateY(0) rotateY(720deg) scale(1);
+      }
+    }
 </style>
 </head>
 <body>
   <!-- 包含所有控件的盒子，用于透明化 -->
   <div class="container">
-    <h2>AnimeTrace 特别版</h2>
+    <h2 id="text-container">AnimeTrace  特别版  K-ON</h2>
 
     <!-- url搜索栏。由于官方文档说明了当前api不支持url识别, 所以计划搁置 -->
 
@@ -182,7 +207,7 @@
           const searchUrl = `https://www.baidu.com/s?wd=${searchQuery}`;
           
           // 返回带链接的角色信息
-          return `角色匹配：<a href="${searchUrl}" target="_blank" style="color:#4CAF50;text-decoration:underline">${c.work} - ${c.character}</a>`;
+          return `角色匹配：<a href="${searchUrl}" target="_blank" style="color:#4CAF50;text-decoration:none">${c.work} - ${c.character}</a>`;
         }).join('<br>');
         
         const boxInfo = `检测区域: ID=${b.box_id}<br> (x1=${b.box[0].toFixed(4)}, y1=${b.box[1].toFixed(4)}, x2=${b.box[2].toFixed(4)}, y2=${b.box[3].toFixed(4)})`;
@@ -294,8 +319,8 @@
             
     // 音乐播放控制变量
     let isMusicPlaying = false;
-    const musicToggle = document.getElementById('musicToggle');
-    const bgMusic = document.getElementById('bgMusic');
+    const musicToggle = document.getElementById('musicToggle');  //切换方案按钮
+    const bgMusic = document.getElementById('bgMusic');  //当前播放音乐
 
     // 配置参数
     const totalSongs = 20; // 设置最大歌曲数量
@@ -377,6 +402,136 @@
       }
     });
 
+    //========== 动态文字效果 ==========
+
+    function initAnimation() {
+      const container = document.getElementById('text-container');
+      const text = container.textContent; // 获取容器原始文本
+      container.innerHTML = '';
+      
+      text.split('').forEach((char, index) => {
+        const span = document.createElement('span');
+        span.className = 'char';
+        span.textContent = char;
+        span.style.animationDelay = `${index * 0.15}s`;
+        container.appendChild(span);
+      });
+
+      // 重置动画
+      function resetAnimation() {
+        const chars = document.querySelectorAll('.char');
+        chars.forEach(char => {
+          char.style.animation = 'none';
+          void char.offsetWidth;
+          char.style.animation = 'spin-jump 1.2s cubic-bezier(0.5, 0.2, 0.3, 1.5) both';
+          char.style.animationPlayState = 'paused';
+        });
+      }
+      
+      // 开始播放动画
+      function startAnimation() {
+        resetAnimation();
+        const chars = document.querySelectorAll('.char');
+        const startTime = performance.now();
+        
+        function animate(timestamp) {
+          const elapsed = timestamp - startTime;
+          chars.forEach((char, i) => {
+            const shouldAnimate = elapsed >= i * 150;
+            char.style.animationPlayState = shouldAnimate ? 'running' : 'paused';
+          });
+
+          if (elapsed < chars.length * 150 + 1200) {
+            requestAnimationFrame(animate);
+          }
+        }
+        requestAnimationFrame(animate);
+      }
+
+      setInterval(startAnimation, 6000); // 定时每6秒重播一次
+      startAnimation();  // 首播
+      container.addEventListener('click', startAnimation);  // 点击重播
+    }
+
+    // 页面加载完成后初始化动画
+    window.addEventListener('DOMContentLoaded', initAnimation);
+
+
+    // ========== 鼠标点击特效 ==========
+
+    // 修改自 github.com/djzhao627/JSClickBubble
+    (function(){
+      onload = function() {
+          var click_cnt = 0;  // 点击次数
+          var $html = document.getElementsByTagName("html")[0];
+          var $body = document.getElementsByTagName("body")[0];
+          $html.onclick = function(e) {
+              var $elem = document.createElement("b");
+              $elem.style.color = "#E94F06"; // 字体颜色
+              $elem.style.zIndex = 9999;
+              $elem.style.position = "absolute";
+              $elem.style.select = "none";
+              var x = e.pageX;
+              var y = e.pageY;
+              $elem.style.left = (x - 10) + "px";
+              $elem.style.top = (y - 20) + "px";
+              clearInterval(anim);
+              switch (++click_cnt) {
+                case 10: 
+                    $elem.innerText = "(ᗜˬᗜ)";
+                    break;
+                case 20: 
+                    $elem.innerText = "(ᗜᴗᗜ)";
+                    break;
+                case 30:
+                    $elem.innerText = "毕业不是终点 今后我们还会相遇";
+                    break;
+                case 40: 
+                    $elem.innerText = "无论走到哪里，我们都是放課後ティータイム~";
+                    break;
+                case 50: 
+                    $elem.innerText = "轻音永不毕业!";
+                    break;
+                case 60:
+                  $elem.innerText = "吉他手 平沢 唯";
+                  break;
+                case 70:
+                    $elem.innerText = "贝斯手 秋山 澪";
+                    break;
+                case 80:
+                    $elem.innerText = "鼓手 田井中 律";
+                    break;
+                case 90:
+                    $elem.innerText = "键盘手 琴吹 紬";
+                    break;
+                case 100:
+                    $elem.innerText = "吉他手 中野 梓";
+                    break;
+                case 121: // 重置
+                    click_cnt = 0;
+                    break;
+                default:
+                    // 默认点击符号
+                    $elem.innerText = "K-ON!";
+                    break;
+              }
+              $elem.style.fontSize = Math.random() * 10 + 8 + "px";
+              var increase = 0;
+              var anim;
+              setTimeout(function() {
+                  anim = setInterval(function() {
+                      if (++increase == 150) {
+                          clearInterval(anim);
+                  $body.removeChild($elem);
+                      }
+                      $elem.style.top = y - 20 - increase + "px";
+                      $elem.style.opacity = (150 - increase) / 120;
+                  }, 8);
+              }, 70);
+              $body.appendChild($elem);
+          };
+      };
+    })();
   </script>
 </body>
 </html>
