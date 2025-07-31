@@ -9,12 +9,17 @@
     background:transparent;
     margin:0;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    overflow: hidden; /* 防止因为躲猫猫导致窗口抖动 */
   }
-  #fileBoxContainer {  /* 用于在添加文件旁边添加几条提示 */
+
+  /* 用于在添加文件旁边添加几条提示 */
+  #fileBoxContainer {  
     display: flex;
     align-items: center;
     gap: 20px; /* 设置间距 */
   }
+
+  /* 上传图片盒子 */
   #fileBox{
     width:300px;
     height:225px;
@@ -27,6 +32,7 @@
     align-items:center;
     justify-content:center;
   }
+  /* 上传后覆盖图片 */
   #fileBox img{
     width:100%;
     height:100%;
@@ -45,6 +51,8 @@
       background:rgba(0,0,0,.5);  /* 返回结果使用黑色半透明背景 */
       box-shadow:0 1px 2px rgba(0,0,0,.1)
     }
+
+    /* 包容所有控件的盒子 */
     .container{
       width:666px;
       margin:40px auto;
@@ -53,6 +61,8 @@
       border-radius:8px;
       color:#fff;
     }
+
+    /* 跳动文字样式 */
     h2{
       white-space: pre-wrap; /* 保留所有空格 */
       position:relative;
@@ -87,9 +97,78 @@
           transform: translateY(0) rotateY(720deg) scale(1);
       }
     }
+
+    /* 躲猫猫样式 */
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    
+    #character {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: url('images/mio_bottom.png') center/contain no-repeat;
+      cursor: pointer;
+      transition: 
+          background-image 0.3s,
+          transform 0.4s cubic-bezier(0.5, 0, 0.5, 1),
+          opacity 0.4s ease;
+      transform-origin: center;
+      opacity: 1;
+    }
+    
+    #character.hiding-left {
+      transform: translateX(-100px) scale(0.8);
+      opacity: 0;
+    }
+    
+    #character.hiding-right {
+      transform: translateX(100px) scale(0.8);
+      opacity: 0;
+    }
+    
+    #character.hiding-bottom {
+      transform: translateY(100px) scale(0.8);
+      opacity: 0;
+    }
+    
+    #character.appearing-left {
+      transform: translateX(-30px);
+      opacity: 0;
+    }
+    
+    #character.appearing-right {
+      transform: translateX(30px);
+      opacity: 0;
+    }
+    
+    #character.appearing-bottom {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+    
+    #character.visible {
+      transform: translate(0, 0) scale(1);
+      opacity: 1;
+    }
+    
+    #character-name {
+      font-weight: bold;
+      margin-right: 10px;
+      align-self: center;
+      min-width: 60px;
+      text-align: center;
+    }
 </style>
 </head>
 <body>
+  <!-- 猫猫盒子 -->
+  <div id="game-container">
+    <div id="character" class="visible"></div>
+  </div>
+
   <!-- 包含所有控件的盒子，用于透明化 -->
   <div class="container">
     <h2 id="text-container">AnimeTrace  特别版  K-ON</h2>
@@ -108,12 +187,16 @@
           <li>图片最大 10 MB</li>
           <li>当前默认返回多结果, 且无法使用 ai 检测, api也不支持 url 图片识别</li>
           <li>音频自动播放某些情况下默认关闭, 需要在网址栏或设置中允许, 后续进入网页才会自动播放</li>
+          <li>桌面上出现了一只可爱的猫猫, 抓住她吧!</li>
         </ul>
       </div>
     </div><br>
     <audio id="bgMusic" style="display:none"></audio>
     <button id="musicToggle">背景音乐: 开/关</button>
-    <button id="toggleBtn">切换背景方案【本地K-ON方案或官方API方案】</button><br><br>
+    <button id="toggleBtn">切换背景方案【本地K-ON方案或官方API方案】</button>
+    <button id="prev-btn">上一个猫猫</button>
+    <button id="next-btn">下一个猫猫</button>
+    <span id="character-name"></span><br><br>
 
     <!-- 控制区 -->
     <!-- 当前不知道为什么, 无论是否勾选返回多结果, 都是返回多结果, 无论是否勾选AI检测, 都返回AI检测为否, 即使发送了AI图 -->
@@ -462,76 +545,177 @@
     // 修改自 github.com/djzhao627/JSClickBubble
     (function(){
       onload = function() {
-          var click_cnt = 0;  // 点击次数
-          var $html = document.getElementsByTagName("html")[0];
-          var $body = document.getElementsByTagName("body")[0];
-          $html.onclick = function(e) {
-              var $elem = document.createElement("b");
-              $elem.style.color = "#E94F06"; // 字体颜色
-              $elem.style.zIndex = 9999;
-              $elem.style.position = "absolute";
-              $elem.style.select = "none";
-              var x = e.pageX;
-              var y = e.pageY;
-              $elem.style.left = (x - 10) + "px";
-              $elem.style.top = (y - 20) + "px";
-              clearInterval(anim);
-              switch (++click_cnt) {
-                case 10: 
-                    $elem.innerText = "(ᗜˬᗜ)";
-                    break;
-                case 20: 
-                    $elem.innerText = "(ᗜᴗᗜ)";
-                    break;
-                case 30:
-                    $elem.innerText = "毕业不是终点 今后我们还会相遇";
-                    break;
-                case 40: 
-                    $elem.innerText = "无论走到哪里，我们都是放課後ティータイム~";
-                    break;
-                case 50: 
-                    $elem.innerText = "轻音永不毕业!";
-                    break;
-                case 60:
-                  $elem.innerText = "吉他手 平沢 唯";
-                  break;
-                case 70:
-                    $elem.innerText = "贝斯手 秋山 澪";
-                    break;
-                case 80:
-                    $elem.innerText = "鼓手 田井中 律";
-                    break;
-                case 90:
-                    $elem.innerText = "键盘手 琴吹 紬";
-                    break;
-                case 100:
-                    $elem.innerText = "吉他手 中野 梓";
-                    break;
-                case 121: // 重置
-                    click_cnt = 0;
-                    break;
-                default:
-                    // 默认点击符号
-                    $elem.innerText = "K-ON!";
-                    break;
-              }
-              $elem.style.fontSize = Math.random() * 10 + 8 + "px";
-              var increase = 0;
-              var anim;
-              setTimeout(function() {
-                  anim = setInterval(function() {
-                      if (++increase == 150) {
-                          clearInterval(anim);
-                  $body.removeChild($elem);
-                      }
-                      $elem.style.top = y - 20 - increase + "px";
-                      $elem.style.opacity = (150 - increase) / 120;
-                  }, 8);
-              }, 70);
-              $body.appendChild($elem);
-          };
+        var click_cnt = 0;  // 点击次数
+        var $html = document.getElementsByTagName("html")[0];
+        var $body = document.getElementsByTagName("body")[0];
+        $html.onclick = function(e) {
+          var $elem = document.createElement("b");
+          $elem.style.color = "#E94F06"; // 字体颜色
+          $elem.style.zIndex = 9999;
+          $elem.style.position = "absolute";
+          $elem.style.select = "none";
+          var x = e.pageX;
+          var y = e.pageY;
+          $elem.style.left = (x - 10) + "px";
+          $elem.style.top = (y - 20) + "px";
+          clearInterval(anim);
+          switch (++click_cnt) {
+            case 10: 
+                $elem.innerText = "(ᗜˬᗜ)";
+                break;
+            case 20: 
+                $elem.innerText = "(ᗜᴗᗜ)";
+                break;
+            case 30:
+                $elem.innerText = "毕业不是终点 今后我们还会相遇";
+                break;
+            case 40: 
+                $elem.innerText = "无论走到哪里，我们都是放課後ティータイム~";
+                break;
+            case 50: 
+                $elem.innerText = "轻音永不毕业!";
+                break;
+            case 60:
+              $elem.innerText = "吉他手 平沢 唯";
+              break;
+            case 70:
+                $elem.innerText = "贝斯手 秋山 澪";
+                break;
+            case 80:
+                $elem.innerText = "鼓手 田井中 律";
+                break;
+            case 90:
+                $elem.innerText = "键盘手 琴吹 紬";
+                break;
+            case 100:
+                $elem.innerText = "吉他手 中野 梓";
+                break;
+            case 121: // 重置
+                click_cnt = 0;
+                break;
+            default:
+                // 默认点击符号
+                $elem.innerText = "K-ON!";
+                break;
+          }
+          $elem.style.fontSize = Math.random() * 10 + 8 + "px";
+          var increase = 0;
+          var anim;
+          setTimeout(function() {
+              anim = setInterval(function() {
+                  if (++increase == 150) {
+                      clearInterval(anim);
+              $body.removeChild($elem);
+                  }
+                  $elem.style.top = y - 20 - increase + "px";
+                  $elem.style.opacity = (150 - increase) / 120;
+              }, 8);
+          }, 70);
+          $body.appendChild($elem);
+        };
       };
     })();
+
+    //========== 躲猫猫模块 ==========
+
+    const characters = ['mio', 'yui', 'azi', 'ritsu', 'mugi'];
+    const character = document.getElementById('character');
+    const nameDisplay = document.getElementById('character-name');
+    let currentCharIndex = 0;
+    let currentPosition = 'bottom';
+    let isAnimating = false;
+
+    function updateCharacter() {
+      nameDisplay.textContent = characters[currentCharIndex];
+      setBorderPosition();
+    }
+
+    function updateImage(position) {
+      const charName = characters[currentCharIndex];
+      character.style.backgroundImage = `url(cats/${charName}_${position}.png)`;
+      currentPosition = position;
+    }
+
+    function hideCharacter(callback) {
+      if (isAnimating) return;
+      isAnimating = true;
+      
+      character.classList.remove('visible');
+      character.classList.add(`hiding-${currentPosition}`);
+      
+      setTimeout(() => {
+          character.classList.remove(`hiding-${currentPosition}`);
+          if (callback) callback();
+      }, 400);
+    }
+
+    function showCharacter(position) {
+      character.classList.add(`appearing-${position}`);
+      updateImage(position);
+      
+      setTimeout(() => {
+        character.classList.remove(`appearing-${position}`);
+        character.classList.add('visible');
+        isAnimating = false;
+      }, 50);
+    }
+
+    function moveCharacter(newPosition) {
+      hideCharacter(() => {
+        const positions = ['left', 'bottom', 'right'];
+        const randomPosition = positions[Math.floor(Math.random() * positions.length)];
+        showCharacter(randomPosition);
+        
+        setTimeout(() => {
+          const [left, top] = calculatePosition(randomPosition);
+          character.style.left = left + 'px';
+          character.style.top = top + 'px';
+        }, 10);
+      });
+    }
+
+    function calculatePosition(position) {
+      switch(position) {
+        case 'left':
+          return [0, Math.random() * (window.innerHeight - 100)];
+        case 'bottom':
+          return [Math.random() * (window.innerWidth - 100), window.innerHeight - 100];
+        case 'right':
+          return [window.innerWidth - 100, Math.random() * (window.innerHeight - 100)];
+      }
+    }
+
+    function setBorderPosition() {
+      const positions = ['left', 'bottom', 'right'];
+      const newPosition = positions[Math.floor(Math.random() * positions.length)];
+      moveCharacter(newPosition);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      updateCharacter();
+      
+      document.getElementById('prev-btn').addEventListener('click', function() {
+        currentCharIndex = (currentCharIndex - 1 + characters.length) % characters.length;
+        updateCharacter();
+      });
+      
+      document.getElementById('next-btn').addEventListener('click', function() {
+        currentCharIndex = (currentCharIndex + 1) % characters.length;
+        updateCharacter();
+      });
+      
+      document.addEventListener('mousemove', function(e) {
+        const rect = character.getBoundingClientRect();
+        const distance = Math.sqrt(
+          Math.pow(e.clientX - (rect.left + rect.width/2), 2) +
+          Math.pow(e.clientY - (rect.top + rect.height/2), 2)
+        );
+        
+        if (distance < 200 && !isAnimating) {
+          setBorderPosition();
+        }
+      });
+    });
   </script>
 </body>
 </html>
