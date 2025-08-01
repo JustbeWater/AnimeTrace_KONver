@@ -1,159 +1,191 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-<meta charset="UTF-8">
-<link rel="icon" href="test/Houkago_Tea_Time.png">
-<title>AnimeTrace 特别版</title>
-<style>
-  body{
-    background:transparent;
-    margin:0;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-    overflow: hidden; /* 防止因为躲猫猫导致窗口抖动 */
-  }
+  <meta charset="UTF-8">
+  <link rel="icon" href="test/Houkago_Tea_Time.png">
+  <title>AnimeTrace 特别版</title>
+  <style>
+    body {
+      background: transparent;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    }
 
-  /* 用于在添加文件旁边添加几条提示 */
-  #fileBoxContainer {  
-    display: flex;
-    align-items: center;
-    gap: 20px; /* 设置间距 */
-  }
+    /* 用于在添加文件旁边添加几条提示 */
+    #fileBoxContainer {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      /* 设置间距 */
+    }
 
-  /* 上传图片盒子 */
-  #fileBox{
-    width:300px;
-    height:225px;
-    border:2px dashed #ccc;
-    border-radius:8px;
-    overflow:hidden;
-    cursor:pointer;
-    transition:.2s;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  /* 上传后覆盖图片 */
-  #fileBox img{
-    width:100%;
-    height:100%;
-    object-fit:cover
-  }
-  #plus{
-    font-size:50px;
-    color:#aaa;
-    user-select:none}
-    .result-item{
-      width:666px;
-      max-width:100%;
-      margin:6px 0;
-      padding:6px;background:#fff;
-      border-radius:4px;
-      background:rgba(0,0,0,.5);  /* 返回结果使用黑色半透明背景 */
-      box-shadow:0 1px 2px rgba(0,0,0,.1)
+    /* 上传图片盒子 */
+    #fileBox {
+      width: 300px;
+      height: 225px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 上传后覆盖图片 */
+    #fileBox img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover
+    }
+
+    #plus {
+      font-size: 50px;
+      color: #aaa;
+      user-select: none
+    }
+
+    .result-item {
+      width: 666px;
+      max-width: 100%;
+      margin: 6px 0;
+      padding: 6px;
+      background: #fff;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, .5);
+      /* 返回结果使用黑色半透明背景 */
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .1)
     }
 
     /* 包容所有控件的盒子 */
-    .container{
-      width:666px;
-      margin:40px auto;
-      padding:20px;
-      background:rgba(0,0,0,.55);
-      border-radius:8px;
-      color:#fff;
+    .container {
+      width: 666px;
+      margin: 40px auto;
+      padding: 20px;
+      background: rgba(0, 0, 0, .55);
+      border-radius: 8px;
+      color: #fff;
     }
 
     /* 跳动文字样式 */
-    h2{
-      white-space: pre-wrap; /* 保留所有空格 */
-      position:relative;
-      padding:6px 0;
-      margin:0 0 20px;
-      color:palevioletred;
-      background:rgba(0,0,0,.55);
-      text-align:center;
-      border-radius:6px;
+    h2 {
+      white-space: pre-wrap;
+      /* 保留所有空格 */
+      position: relative;
+      padding: 6px 0;
+      margin: 0 0 20px;
+      color: palevioletred;
+      background: rgba(0, 0, 0, .55);
+      text-align: center;
+      border-radius: 6px;
     }
+
     .char {
       display: inline-block;
       will-change: transform;
       transform-style: preserve-3d;
     }
+
     @keyframes spin-jump {
-      0% { 
-          transform: translateY(0) rotateY(0) scale(1);
-          opacity: 0.8;
+      0% {
+        transform: translateY(0) rotateY(0) scale(1);
+        opacity: 0.8;
       }
-      30% { 
-          transform: translateY(-30px) rotateY(720deg) scale(1.3); /* 起跳高度 30px */
-          opacity: 1;
+
+      30% {
+        transform: translateY(-30px) rotateY(720deg) scale(1.3);
+        /* 起跳高度 30px */
+        opacity: 1;
       }
-      70% { 
-          transform: translateY(0) rotateY(720deg) scale(1);
+
+      70% {
+        transform: translateY(0) rotateY(720deg) scale(1);
       }
-      85% { 
-          transform: translateY(-10px) rotateY(720deg) scale(1.1); /* 弹跳高度 10px */
+
+      85% {
+        transform: translateY(-10px) rotateY(720deg) scale(1.1);
+        /* 弹跳高度 10px */
       }
-      100% { 
-          transform: translateY(0) rotateY(720deg) scale(1);
+
+      100% {
+        transform: translateY(0) rotateY(720deg) scale(1);
       }
     }
 
     /* 躲猫猫样式 */
-    #game-container {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-    
-    #character {
-      position: absolute;
+    #character-container {
+      position: fixed;
+      /* 改为fixed定位 */
       width: 100px;
       height: 100px;
+      pointer-events: none;
+      /* 防止遮挡页面内容 */
+      z-index: 1000;
+    }
+
+    #character {
+      width: 100%;
+      height: 100%;
       background: url('images/mio_bottom.png') center/contain no-repeat;
-      cursor: pointer;
-      transition: 
-          background-image 0.3s,
-          transform 0.4s cubic-bezier(0.5, 0, 0.5, 1),
-          opacity 0.4s ease;
+      transition:
+        background-image 0.3s,
+        transform 0.4s cubic-bezier(0.5, 0, 0.5, 1),
+        opacity 0.4s ease;
       transform-origin: center;
       opacity: 1;
     }
-    
+
     #character.hiding-left {
       transform: translateX(-100px) scale(0.8);
       opacity: 0;
     }
-    
+
     #character.hiding-right {
       transform: translateX(100px) scale(0.8);
       opacity: 0;
     }
-    
+
     #character.hiding-bottom {
       transform: translateY(100px) scale(0.8);
       opacity: 0;
     }
-    
+
     #character.appearing-left {
       transform: translateX(-30px);
       opacity: 0;
     }
-    
+
     #character.appearing-right {
       transform: translateX(30px);
       opacity: 0;
     }
-    
+
     #character.appearing-bottom {
       transform: translateY(30px);
       opacity: 0;
     }
-    
+
     #character.visible {
       transform: translate(0, 0) scale(1);
       opacity: 1;
     }
-    
+
+    #control-panel {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px 20px;
+      border-radius: 50px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      z-index: 1001;
+    }
+
     #character-name {
       font-weight: bold;
       margin-right: 10px;
@@ -161,17 +193,18 @@
       min-width: 60px;
       text-align: center;
     }
-</style>
+  </style>
 </head>
+
 <body>
   <!-- 猫猫盒子 -->
-  <div id="game-container">
+  <div id="character-container">
     <div id="character" class="visible"></div>
   </div>
 
   <!-- 包含所有控件的盒子，用于透明化 -->
   <div class="container">
-    <h2 id="text-container">AnimeTrace  特别版  K-ON</h2>
+    <h2 id="text-container">AnimeTrace 特别版 K-ON</h2>
 
     <!-- url搜索栏。由于官方文档说明了当前api不支持url识别, 所以计划搁置 -->
 
@@ -217,15 +250,15 @@
   <script>
     //========== 功能模块 ==========
 
-    const fileBox   = document.getElementById('fileBox');
+    const fileBox = document.getElementById('fileBox');
     const fileInput = document.getElementById('fileInput');
-    const plus      = document.getElementById('plus');
-    const coverImg  = document.getElementById('coverImg');
+    const plus = document.getElementById('plus');
+    const coverImg = document.getElementById('coverImg');
     const uploadBtn = document.getElementById('uploadBtn');
-    const multiChk  = document.getElementById('multiChk');
-    const aiChk     = document.getElementById('aiChk');
-    const modelSel  = document.getElementById('modelSel');
-    const preview   = document.getElementById('preview');
+    const multiChk = document.getElementById('multiChk');
+    const aiChk = document.getElementById('aiChk');
+    const modelSel = document.getElementById('modelSel');
+    const preview = document.getElementById('preview');
 
     let currentFile = null;
 
@@ -233,20 +266,20 @@
     fileBox.addEventListener('click', () => fileInput.click());
 
     /* 选文件后立即把图片盖在方框上 */
-    fileInput.addEventListener('change', (e)=>{
+    fileInput.addEventListener('change', (e) => {
       currentFile = e.target.files[0];
-      if(!currentFile) return;
+      if (!currentFile) return;
       coverImg.src = URL.createObjectURL(currentFile);
-      plus.style.display   = 'none';
+      plus.style.display = 'none';
       coverImg.style.display = 'block';
     });
 
     /* 识别逻辑 */
-    
+
     uploadBtn.onclick = async () => {
-      if(!currentFile){ 
-        alert('请先选择图片'); 
-        return; 
+      if (!currentFile) {
+        alert('请先选择图片');
+        return;
       }
       const form = new FormData();
       form.append('file', currentFile);
@@ -256,31 +289,31 @@
       preview.innerHTML = '<p>识别中，请稍候...</p>';
       try {
         const res = await fetch('https://api.animetrace.com/v1/search', {
-          method: 'POST', 
+          method: 'POST',
           body: form
         });
         // 处理无响应内容的情况(纯风景图片)
-        if(res.status === 204) {
+        if (res.status === 204) {
           preview.innerHTML = '<p>无结果 - 图片中未检测到人物</p>';
           return;
         }
         const json = await res.json();
         // 处理返回空数据的情况
-        if(!json || !json.data || json.data.length === 0) {
+        if (!json || !json.data || json.data.length === 0) {
           preview.innerHTML = '<p>无结果 - 图片中未检测到人物</p>';
           return;
         }
         // 处理API返回的错误码
-        if(json.code !== 0) {
+        if (json.code !== 0) {
           preview.innerHTML = `<p>识别失败：${json.message || '未知错误'}</p>`;
           return;
         }
         render(json.data);
-      } catch(e) {
+      } catch (e) {
         preview.innerHTML = `<p>网络或服务器错误：${e.message}</p>`;
       }
     };
-    
+
     /* 修改后的render函数 - 添加超链接跳转功能 */
     function render(dataArr) {
       const results = dataArr.map(b => {
@@ -288,15 +321,15 @@
           // 生成搜索链接 - 使用百度搜索角色名+作品名
           const searchQuery = encodeURIComponent(`${c.character} ${c.work}`);
           const searchUrl = `https://www.baidu.com/s?wd=${searchQuery}`;
-          
+
           // 返回带链接的角色信息
           return `角色匹配：<a href="${searchUrl}" target="_blank" style="color:#4CAF50;text-decoration:none">${c.work} - ${c.character}</a>`;
         }).join('<br>');
-        
+
         const boxInfo = `检测区域: ID=${b.box_id}<br> (x1=${b.box[0].toFixed(4)}, y1=${b.box[1].toFixed(4)}, x2=${b.box[2].toFixed(4)}, y2=${b.box[3].toFixed(4)})`;
         return `${boxInfo}<br>${characters}`;
       });
-      
+
       preview.innerHTML = `<div class="result-item">${results.join('<br><br>')}</div>`;
     }
 
@@ -344,7 +377,7 @@
     function setBackgroundImageApi() {
       const imageUrl = 'https://support.animetrace.com/random/image?' + Date.now();  // 增加时间戳，防止缓存数据或相同url导致背景不更改
       const img = new Image();
-      img.onload = function() {
+      img.onload = function () {
         swapBackground(`url(${img.src})`);
       };
       img.src = imageUrl;
@@ -354,9 +387,9 @@
       const max = 40;
       let current = Math.floor(Math.random() * max) + 1;
       const bgUrl = `bg/${String(current).padStart(2, '0')}.jpg`;
-      
+
       const img = new Image();
-      img.onload = function() {
+      img.onload = function () {
         swapBackground(`url(${bgUrl})`);
       };
       img.src = bgUrl;
@@ -371,7 +404,7 @@
       setTimeout(() => {
         nextBg.classList.add('active');
         setTimeout(() => {
-          if(currentBg) bgContainer.removeChild(currentBg);
+          if (currentBg) bgContainer.removeChild(currentBg);
           currentBg = nextBg;
         }, 1500);
       }, 50);
@@ -381,15 +414,15 @@
     function startTimer() {
       clearInterval(timer);
       timer = setInterval(() => {
-        if(useApi) setBackgroundImageApi();
+        if (useApi) setBackgroundImageApi();
         else setBackgroundImageLocal();
       }, 60000);        // 每分钟切换
     }
 
     /* 监听切换背景方案按钮 */
-    document.getElementById('toggleBtn').onclick = function() {
+    document.getElementById('toggleBtn').onclick = function () {
       useApi = !useApi;
-      if(useApi) setBackgroundImageApi();
+      if (useApi) setBackgroundImageApi();
       else setBackgroundImageLocal();
       startTimer();
     };
@@ -399,7 +432,7 @@
     startTimer();
 
     //========== 音乐模块 ==========
-            
+
     // 音乐播放控制变量
     let isMusicPlaying = false;
     const musicToggle = document.getElementById('musicToggle');  //切换方案按钮
@@ -426,8 +459,8 @@
     function initMusicPlayer() {
       const randomSong = Math.floor(Math.random() * totalSongs) + 1;
       playSong(randomSong);
-      
-      if(!isMusicPlaying) {
+
+      if (!isMusicPlaying) {
         bgMusic.play().then(() => {
           isMusicPlaying = true;
         }).catch(e => console.log('自动播放被阻止:', e));
@@ -436,7 +469,7 @@
 
     // 音乐切换按钮事件
     musicToggle.onclick = () => {
-      if(isMusicPlaying) {
+      if (isMusicPlaying) {
         bgMusic.pause();
       } else {
         bgMusic.play();
@@ -475,9 +508,9 @@
       // 恢复页面样式
       document.body.style.backgroundColor = '';
       fileBox.style.borderColor = '#ccc';
-      
+
       // 处理拖放的文件
-      if(e.dataTransfer.files.length) {
+      if (e.dataTransfer.files.length) {
         currentFile = e.dataTransfer.files[0];
         coverImg.src = URL.createObjectURL(currentFile);
         plus.style.display = 'none';
@@ -491,7 +524,7 @@
       const container = document.getElementById('text-container');
       const text = container.textContent; // 获取容器原始文本
       container.innerHTML = '';
-      
+
       text.split('').forEach((char, index) => {
         const span = document.createElement('span');
         span.className = 'char';
@@ -510,13 +543,13 @@
           char.style.animationPlayState = 'paused';
         });
       }
-      
+
       // 开始播放动画
       function startAnimation() {
         resetAnimation();
         const chars = document.querySelectorAll('.char');
         const startTime = performance.now();
-        
+
         function animate(timestamp) {
           const elapsed = timestamp - startTime;
           chars.forEach((char, i) => {
@@ -543,12 +576,12 @@
     // ========== 鼠标点击特效 ==========
 
     // 修改自 github.com/djzhao627/JSClickBubble
-    (function(){
-      onload = function() {
+    (function () {
+      onload = function () {
         var click_cnt = 0;  // 点击次数
         var $html = document.getElementsByTagName("html")[0];
         var $body = document.getElementsByTagName("body")[0];
-        $html.onclick = function(e) {
+        $html.onclick = function (e) {
           var $elem = document.createElement("b");
           $elem.style.color = "#E94F06"; // 字体颜色
           $elem.style.zIndex = 9999;
@@ -560,56 +593,56 @@
           $elem.style.top = (y - 20) + "px";
           clearInterval(anim);
           switch (++click_cnt) {
-            case 10: 
-                $elem.innerText = "(ᗜˬᗜ)";
-                break;
-            case 20: 
-                $elem.innerText = "(ᗜᴗᗜ)";
-                break;
+            case 10:
+              $elem.innerText = "(ᗜˬᗜ)";
+              break;
+            case 20:
+              $elem.innerText = "(ᗜᴗᗜ)";
+              break;
             case 30:
-                $elem.innerText = "毕业不是终点 今后我们还会相遇";
-                break;
-            case 40: 
-                $elem.innerText = "无论走到哪里，我们都是放課後ティータイム~";
-                break;
-            case 50: 
-                $elem.innerText = "轻音永不毕业!";
-                break;
+              $elem.innerText = "毕业不是终点 今后我们还会相遇";
+              break;
+            case 40:
+              $elem.innerText = "无论走到哪里，我们都是放課後ティータイム~";
+              break;
+            case 50:
+              $elem.innerText = "轻音永不毕业!";
+              break;
             case 60:
               $elem.innerText = "吉他手 平沢 唯";
               break;
             case 70:
-                $elem.innerText = "贝斯手 秋山 澪";
-                break;
+              $elem.innerText = "贝斯手 秋山 澪";
+              break;
             case 80:
-                $elem.innerText = "鼓手 田井中 律";
-                break;
+              $elem.innerText = "鼓手 田井中 律";
+              break;
             case 90:
-                $elem.innerText = "键盘手 琴吹 紬";
-                break;
+              $elem.innerText = "键盘手 琴吹 紬";
+              break;
             case 100:
-                $elem.innerText = "吉他手 中野 梓";
-                break;
+              $elem.innerText = "吉他手 中野 梓";
+              break;
             case 121: // 重置
-                click_cnt = 0;
-                break;
+              click_cnt = 0;
+              break;
             default:
-                // 默认点击符号
-                $elem.innerText = "K-ON!";
-                break;
+              // 默认点击符号
+              $elem.innerText = "K-ON!";
+              break;
           }
           $elem.style.fontSize = Math.random() * 10 + 8 + "px";
           var increase = 0;
           var anim;
-          setTimeout(function() {
-              anim = setInterval(function() {
-                  if (++increase == 150) {
-                      clearInterval(anim);
-              $body.removeChild($elem);
-                  }
-                  $elem.style.top = y - 20 - increase + "px";
-                  $elem.style.opacity = (150 - increase) / 120;
-              }, 8);
+          setTimeout(function () {
+            anim = setInterval(function () {
+              if (++increase == 150) {
+                clearInterval(anim);
+                $body.removeChild($elem);
+              }
+              $elem.style.top = y - 20 - increase + "px";
+              $elem.style.opacity = (150 - increase) / 120;
+            }, 8);
           }, 70);
           $body.appendChild($elem);
         };
@@ -620,6 +653,7 @@
 
     const characters = ['mio', 'yui', 'azi', 'ritsu', 'mugi'];
     const character = document.getElementById('character');
+    const container = document.getElementById('character-container');
     const nameDisplay = document.getElementById('character-name');
     let currentCharIndex = 0;
     let currentPosition = 'bottom';
@@ -639,20 +673,20 @@
     function hideCharacter(callback) {
       if (isAnimating) return;
       isAnimating = true;
-      
+
       character.classList.remove('visible');
       character.classList.add(`hiding-${currentPosition}`);
-      
+
       setTimeout(() => {
-          character.classList.remove(`hiding-${currentPosition}`);
-          if (callback) callback();
+        character.classList.remove(`hiding-${currentPosition}`);
+        if (callback) callback();
       }, 400);
     }
 
     function showCharacter(position) {
       character.classList.add(`appearing-${position}`);
       updateImage(position);
-      
+
       setTimeout(() => {
         character.classList.remove(`appearing-${position}`);
         character.classList.add('visible');
@@ -665,17 +699,17 @@
         const positions = ['left', 'bottom', 'right'];
         const randomPosition = positions[Math.floor(Math.random() * positions.length)];
         showCharacter(randomPosition);
-        
+
         setTimeout(() => {
           const [left, top] = calculatePosition(randomPosition);
-          character.style.left = left + 'px';
-          character.style.top = top + 'px';
+          container.style.left = left + 'px';
+          container.style.top = top + 'px';
         }, 10);
       });
     }
 
     function calculatePosition(position) {
-      switch(position) {
+      switch (position) {
         case 'left':
           return [0, Math.random() * (window.innerHeight - 100)];
         case 'bottom':
@@ -691,26 +725,26 @@
       moveCharacter(newPosition);
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       updateCharacter();
-      
-      document.getElementById('prev-btn').addEventListener('click', function() {
+
+      document.getElementById('prev-btn').addEventListener('click', function () {
         currentCharIndex = (currentCharIndex - 1 + characters.length) % characters.length;
         updateCharacter();
       });
-      
-      document.getElementById('next-btn').addEventListener('click', function() {
+
+      document.getElementById('next-btn').addEventListener('click', function () {
         currentCharIndex = (currentCharIndex + 1) % characters.length;
         updateCharacter();
       });
-      
-      document.addEventListener('mousemove', function(e) {
-        const rect = character.getBoundingClientRect();
+
+      document.addEventListener('mousemove', function (e) {
+        const rect = container.getBoundingClientRect();
         const distance = Math.sqrt(
-          Math.pow(e.clientX - (rect.left + rect.width/2), 2) +
-          Math.pow(e.clientY - (rect.top + rect.height/2), 2)
+          Math.pow(e.clientX - (rect.left + rect.width / 2), 2) +
+          Math.pow(e.clientY - (rect.top + rect.height / 2), 2)
         );
-        
+
         if (distance < 200 && !isAnimating) {
           setBorderPosition();
         }
@@ -718,4 +752,5 @@
     });
   </script>
 </body>
+
 </html>
